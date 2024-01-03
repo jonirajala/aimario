@@ -62,7 +62,6 @@ def ppo_update(states, actions, returns, old_probs, model, optimizer, advantages
             new_policy = F.softmax(logits, dim=1)
             new_m = Categorical(new_policy)
             new_log_policy = new_m.log_prob(action_batch)
-
             ratio = torch.exp(new_log_policy - old_prob_batch)
 
             # Compute surrogate objective
@@ -107,7 +106,6 @@ def collect_trajectories(env, model, num_episodes, max_steps):
                 logits, value = model(state)
                 policy = F.softmax(logits, dim=1)
                 old_m = Categorical(policy)
-
                 action = old_m.sample()
                 old_log_policy = old_m.log_prob(action)
                 new_state, reward, terminated, truncated, info = env.step(action.item())
@@ -145,7 +143,6 @@ def collect_trajectories(env, model, num_episodes, max_steps):
                 next_value = value
                 R.append(gae + value)
             R = R[::-1]
-
             episode_advantages = [R[i] - episode_values[i] for i in range(len(R))]
 
             states += episode_states
@@ -155,7 +152,6 @@ def collect_trajectories(env, model, num_episodes, max_steps):
             values += episode_values
             returns += R
             advantages += episode_advantages
-
 
     return states, actions, rewards, old_probs, returns, advantages
 
@@ -171,9 +167,7 @@ def train():
         MAX_STEPS = 512
 
     model = Model(OUPUT_DIM).to("mps")
-
     optimizer = optim.Adam(model.parameters(), lr=LR)
-
     env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True)
     env = JoypadSpace(env, SIMPLE_MOVEMENT)
 
@@ -182,9 +176,7 @@ def train():
     try:
         for i in range(ITERS):
             states, actions, rewards, old_probs, returns, advantages = collect_trajectories(env, model, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
-
             losses, model = ppo_update(states, actions, returns, old_probs, model, optimizer, advantages) 
-
             tot_losses += losses
 
             print(f"Round {i+1}/{ITERS} -- loss: {sum(losses) / len(losses):.2f}")
@@ -193,7 +185,6 @@ def train():
 
     except KeyboardInterrupt:
         pass
-
 
     fig, ax = plt.subplots(ncols=1, figsize=(10,4))
     ax.plot(tot_losses)
@@ -209,11 +200,9 @@ def train():
         while not done:
             state = cv2.resize(state, (84, 84))
             state = torch.tensor(state.copy(), device=device, dtype=torch.float32).reshape(1, 3, HEIGHT, WIDTH) / 255
-
             logits, _ = model(state)
             policy = F.softmax(logits, dim=1)
             action = torch.argmax(policy).item()
-            
             state, reward, terminated, truncated, info = env_test.step(action)
             done = terminated or truncated
 
